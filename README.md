@@ -68,14 +68,6 @@ It includes:
 - Dashboard import
 - Validation checks
 
-## Credentials
-Defaults are configured in `run_all.sh`:
-- `ELASTIC_PASSWORD` (default: `lamilinux@`)
-- `ROOT_USERNAME` (default: `root`)
-- `ROOT_PASSWORD` (default: `lamilinux@`)
-
-These are written into the `elastic-credentials` secret and used for Kibana and APM. Override by exporting env vars before running the script.
-
 ## Validation (Kubernetes-side)
 If Kibana shows “server not ready,” validate Elasticsearch first:
 - Check ES health inside the pod (auth required).
