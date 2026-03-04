@@ -32,6 +32,14 @@
 ## APM Server shows blank page in browser
 **Expected:** APM Server is an API endpoint, not a UI. Use Kibana APM app for the UI.
 
+## Electron dashboard doesn’t open or is blank
+**Cause:** Dependencies not installed or the app is not started from the correct directory.
+
+**Fix**
+1. Run `npm install` inside `electron-dashboard/`.
+2. Start with `npm run app`.
+3. If you see a blank window, open DevTools and check for missing assets.
+
 ## Online Boutique `frontend` never becomes available
 **Cause:** Cluster resource pressure or image pull failures.
 
