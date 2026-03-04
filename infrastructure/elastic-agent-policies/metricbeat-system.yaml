@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metricbeat
+  namespace: elastic-stack
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metricbeat
+rules:
+  - apiGroups: ["*"]
+    resources: ["nodes", "namespaces", "pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metricbeat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metricbeat
+subjects:
+  - kind: ServiceAccount
+    name: metricbeat
+    namespace: elastic-stack
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metricbeat-config
+  namespace: elastic-stack
+data:
+  metricbeat.yml: |
+    metricbeat.modules:
+      - module: system
+        period: 10s
+        metricsets:
+          - cpu
+          - load
+          - memory
+          - network
+          - process
+          - process_summary
+          - socket_summary
+          - filesystem
+          - fsstat
+          - diskio
+        processes: ['.*']
+        process.include_top_n:
+          by_cpu: 5
+          by_memory: 5
+    output.elasticsearch:
+      hosts: ["http://elasticsearch.elastic-stack:9200"]
+      username: "elastic"
+      password: "${ELASTIC_PASSWORD}"
+    setup.kibana:
+      host: "http://kibana.elastic-stack:5601"
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: metricbeat
+  namespace: elastic-stack
+spec:
+  selector:
+    matchLabels:
+      app: metricbeat
+  template:
+    metadata:
+      labels:
+        app: metricbeat
+    spec:
+      serviceAccountName: metricbeat
+      containers:
+        - name: metricbeat
+          image: docker.elastic.co/beats/metricbeat:8.13.4
+          args: ["-c", "/etc/metricbeat.yml", "-e"]
+          env:
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elastic-credentials
+                  key: elastic_password
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: config
+              mountPath: /etc/metricbeat.yml
+              subPath: metricbeat.yml
+            - name: proc
+              mountPath: /hostfs/proc
+              readOnly: true
+            - name: sysfs
+              mountPath: /hostfs/sys/fs/cgroup
+              readOnly: true
+            - name: rootfs
+              mountPath: /hostfs
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: metricbeat-config
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sysfs
+          hostPath:
+            path: /sys/fs/cgroup
+        - name: rootfs
+          hostPath:
+            path: /

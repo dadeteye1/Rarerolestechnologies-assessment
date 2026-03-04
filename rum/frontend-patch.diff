@@ -1,0 +1,22 @@
+diff --git a/src/frontend/templates/index.html b/src/frontend/templates/index.html
+index 8b9f3a1..b29d2c3 100644
+--- a/src/frontend/templates/index.html
++++ b/src/frontend/templates/index.html
+@@ -4,6 +4,20 @@
+ <head>
+   <meta charset="UTF-8">
+   <title>Online Boutique</title>
++
++  <!-- Elastic RUM Agent -->
++  <script src="https://unpkg.com/@elastic/apm-rum@5.16.0/dist/bundles/elastic-apm-rum.umd.min.js"></script>
++  <script>
++    elasticApm.init({
++      serviceName: 'frontend',
++      serverUrl: 'APM_SERVER_URL',
++      environment: 'assessment',
++      distributedTracingOrigins: ['*'],
++      breakdownMetrics: true,
++      instrument: true,
++    })
++  </script>
+ </head>

@@ -1,0 +1,91 @@
+mode: deployment
+replicaCount: 1
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: 0.146.1
+
+serviceAccount:
+  create: true
+
+resources:
+  requests:
+    cpu: 300m
+    memory: 512Mi
+  limits:
+    cpu: 2
+    memory: 1Gi
+
+extraEnvs:
+  - name: ELASTIC_APM_SECRET_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: elastic-credentials
+        key: apm_secret_token
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "deployment.environment=assessment"
+
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc: {}
+        http: {}
+  processors:
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 800
+      spike_limit_mib: 200
+    batch: {}
+    k8sattributes:
+      extract:
+        metadata:
+          - k8s.namespace.name
+          - k8s.pod.name
+          - k8s.deployment.name
+          - k8s.node.name
+    resourcedetection:
+      detectors: [env]
+    tail_sampling:
+      decision_wait: 10s
+      num_traces: 10000
+      expected_new_traces_per_sec: 200
+      policies:
+        - name: errors
+          type: status_code
+          status_code:
+            status_codes: ["ERROR"]
+        - name: latency
+          type: latency
+          latency:
+            threshold_ms: 1000
+        - name: probabilistic
+          type: probabilistic
+          probabilistic:
+            sampling_percentage: 10
+  exporters:
+    otlp_http:
+      endpoint: http://apm-server.elastic-stack:8200
+      headers:
+        Authorization: "Bearer ${ELASTIC_APM_SECRET_TOKEN}"
+  extensions:
+    health_check: {}
+    zpages: {}
+  service:
+    extensions: [health_check, zpages]
+    telemetry:
+      metrics:
+        address: 0.0.0.0:8888
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, resourcedetection, tail_sampling, batch]
+        exporters: [otlp_http]
+      metrics:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, resourcedetection, batch]
+        exporters: [otlp_http]
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, resourcedetection, batch]
+        exporters: [otlp_http]

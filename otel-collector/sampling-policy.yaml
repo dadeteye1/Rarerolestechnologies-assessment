@@ -1,0 +1,15 @@
+# Tail sampling policy used by the gateway collector
+# Sample 100% of error spans and 10% of successful traces
+policies:
+  - name: errors
+    type: status_code
+    status_code:
+      status_codes: ["ERROR"]
+  - name: latency
+    type: latency
+    latency:
+      threshold_ms: 1000
+  - name: probabilistic
+    type: probabilistic
+    probabilistic:
+      sampling_percentage: 10

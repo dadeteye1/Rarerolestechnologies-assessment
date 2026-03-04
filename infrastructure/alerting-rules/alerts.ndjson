@@ -1,0 +1,3 @@
+{"type":"alert","id":"high-cpu","attributes":{"name":"High CPU >85% for 5m","tags":["infra"],"enabled":false,"schedule":{"interval":"1m"},"params":{},"actions":[],"notifyWhen":"onActiveAlert"},"references":[]}
+{"type":"alert","id":"low-disk","attributes":{"name":"Disk free <10%","tags":["infra"],"enabled":false,"schedule":{"interval":"1m"},"params":{},"actions":[],"notifyWhen":"onActiveAlert"},"references":[]}
+{"type":"alert","id":"memory-pressure","attributes":{"name":"Memory available <500MB","tags":["infra"],"enabled":false,"schedule":{"interval":"1m"},"params":{},"actions":[],"notifyWhen":"onActiveAlert"},"references":[]}

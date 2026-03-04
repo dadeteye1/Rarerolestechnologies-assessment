@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metricbeat-redis-config
+  namespace: elastic-stack
+data:
+  metricbeat.yml: |
+    metricbeat.modules:
+      - module: redis
+        metricsets: ["info", "keyspace"]
+        period: 10s
+        hosts: ["redis-cart.default:6379"]
+    output.elasticsearch:
+      hosts: ["http://elasticsearch.elastic-stack:9200"]
+      username: "elastic"
+      password: "${ELASTIC_PASSWORD}"
+    setup.kibana:
+      host: "http://kibana.elastic-stack:5601"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metricbeat-redis
+  namespace: elastic-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metricbeat-redis
+  template:
+    metadata:
+      labels:
+        app: metricbeat-redis
+    spec:
+      containers:
+        - name: metricbeat
+          image: docker.elastic.co/beats/metricbeat:8.13.4
+          args: ["-c", "/etc/metricbeat.yml", "-e"]
+          env:
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elastic-credentials
+                  key: elastic_password
+          volumeMounts:
+            - name: config
+              mountPath: /etc/metricbeat.yml
+              subPath: metricbeat.yml
+      volumes:
+        - name: config
+          configMap:
+            name: metricbeat-redis-config

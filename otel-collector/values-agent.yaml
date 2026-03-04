@@ -1,0 +1,75 @@
+mode: daemonset
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: 0.146.1
+
+serviceAccount:
+  create: true
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 1
+    memory: 512Mi
+
+extraEnvs:
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "deployment.environment=assessment"
+
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc: {}
+        http: {}
+    zipkin: {}
+    hostmetrics:
+      collection_interval: 10s
+      scrapers:
+        cpu: {}
+        memory: {}
+        disk: {}
+        filesystem: {}
+        network: {}
+        load: {}
+        process: {}
+        paging: {}
+  processors:
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 400
+      spike_limit_mib: 100
+    batch: {}
+    resourcedetection:
+      detectors: [env, system]
+      system:
+        hostname_sources: [os]
+  exporters:
+    otlp:
+      endpoint: otel-gateway:4317
+      tls:
+        insecure: true
+  extensions:
+    health_check: {}
+    zpages: {}
+  service:
+    extensions: [health_check, zpages]
+    telemetry:
+      metrics:
+        address: 0.0.0.0:8888
+    pipelines:
+      traces:
+        receivers: [otlp, zipkin]
+        processors: [memory_limiter, resourcedetection, batch]
+        exporters: [otlp]
+      metrics:
+        receivers: [otlp, hostmetrics]
+        processors: [memory_limiter, resourcedetection, batch]
+        exporters: [otlp]
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, resourcedetection, batch]
+        exporters: [otlp]

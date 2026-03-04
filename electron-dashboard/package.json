@@ -1,0 +1,12 @@
+{
+  "name": "sre-electron-dashboard",
+  "version": "0.1.0",
+  "description": "SRE assessment dashboard (APM, RUM, Business, Infra)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^30.0.0"
+  }
+}

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SRE Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <div>
+          <div class="title">SRE Observability Dashboard</div>
+          <div class="subtitle">APM • RUM • Business • Infra</div>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="pill">Environment: assessment</div>
+        <button class="pill button" id="refreshBtn">Refresh</button>
+        <div class="pill">Last refresh: <span id="lastRefresh">--</span></div>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="apm">Service Health</button>
+      <button class="tab" data-tab="rum">Frontend / RUM</button>
+      <button class="tab" data-tab="biz">Business</button>
+      <button class="tab" data-tab="infra">Infrastructure</button>
+    </nav>
+
+    <main class="content">
+      <section class="panel-grid active" id="tab-apm">
+        <div class="panel span-2">
+          <div class="panel-title">RED Metrics per Service</div>
+          <canvas id="apmRed"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Apdex (Threshold: <input id="apdexThreshold" value="300" /> ms)</div>
+          <canvas id="apmApdex"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Error Trends + Anomalies</div>
+          <canvas id="apmErrors"></canvas>
+        </div>
+        <div class="panel span-2">
+          <div class="panel-title">Service Dependency Map</div>
+          <div class="map-placeholder">APM Service Map (embed link)</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Top Failing Transactions</div>
+          <table class="table" id="apmFailing"></table>
+        </div>
+        <div class="panel">
+          <div class="panel-title">SLO Burn Rate (1h / 6h)</div>
+          <canvas id="apmBurn"></canvas>
+        </div>
+      </section>
+
+      <section class="panel-grid" id="tab-rum">
+        <div class="panel">
+          <div class="panel-title">Core Web Vitals</div>
+          <div class="gauges">
+            <div class="gauge">
+              <div class="gauge-label">LCP</div>
+              <canvas id="rumLcp"></canvas>
+            </div>
+            <div class="gauge">
+              <div class="gauge-label">INP/FID</div>
+              <canvas id="rumInp"></canvas>
+            </div>
+            <div class="gauge">
+              <div class="gauge-label">CLS</div>
+              <canvas id="rumCls"></canvas>
+            </div>
+            <div class="gauge">
+              <div class="gauge-label">TTFB</div>
+              <canvas id="rumTtfb"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="panel span-2">
+          <div class="panel-title">Page Load Waterfall</div>
+          <canvas id="rumWaterfall"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Route Latencies (p50/p90/p99)</div>
+          <canvas id="rumRoutes"></canvas>
+        </div>
+        <div class="panel span-2">
+          <div class="panel-title">JS Errors (Top)</div>
+          <table class="table" id="rumErrors"></table>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Geo Latency</div>
+          <div class="map-placeholder">Geo map (embed)</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Device Segmentation</div>
+          <canvas id="rumDevices"></canvas>
+        </div>
+        <div class="panel span-2">
+          <div class="panel-title">Trace Correlation</div>
+          <div class="trace-link">Sample trace link</div>
+        </div>
+      </section>
+
+      <section class="panel-grid" id="tab-biz">
+        <div class="panel span-2">
+          <div class="panel-title">Checkout Funnel</div>
+          <canvas id="bizFunnel"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Conversion & Abandonment</div>
+          <canvas id="bizConversion"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Revenue vs Latency</div>
+          <canvas id="bizRevenue"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Cart Ops vs Checkout</div>
+          <canvas id="bizCart"></canvas>
+        </div>
+        <div class="panel span-2">
+          <div class="panel-title">Payment Failures by Reason</div>
+          <table class="table" id="bizPayments"></table>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Top Products (Add/Remove)</div>
+          <canvas id="bizProducts"></canvas>
+        </div>
+      </section>
+
+      <section class="panel-grid" id="tab-infra">
+        <div class="panel span-2">
+          <div class="panel-title">Node Saturation (CPU/Mem/Disk/Net)</div>
+          <canvas id="infraNodes"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">K8s Health</div>
+          <canvas id="infraK8s"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">NGINX Ingress</div>
+          <canvas id="infraNginx"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Postgres</div>
+          <canvas id="infraPg"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Redis</div>
+          <canvas id="infraRedis"></canvas>
+        </div>
+        <div class="panel span-2">
+          <div class="panel-title">Network Policy Denies</div>
+          <canvas id="infraNetpol"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Alerts</div>
+          <table class="table" id="infraAlerts"></table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
