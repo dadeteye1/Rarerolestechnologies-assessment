@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+**/node_modules/
+.env
+.env.*
+*.log
+*.pid
+*.seed
+*.swp
+.idea/
+.vscode/
