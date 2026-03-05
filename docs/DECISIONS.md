@@ -36,3 +36,13 @@ This log captures the major architectural decisions made for the assessment, alo
 - **Decision:** Provide `run_all.sh` and `destroy_all.sh` for repeatability.
 - **Why:** Reduces setup time and makes the environment reproducible.
 - **Trade-off:** Some steps must remain manual (patches and Kibana imports).
+
+## 8. Fast Mode (1-node kind + reduced Elastic resources)
+- **Decision:** Default to a 1-node kind cluster with reduced ES/Kibana resource requests for local speed.
+- **Why:** Avoids slow image loads and scheduling failures on resource-constrained laptops.
+- **Trade-off:** Lower headroom and occasional tuning for Kibana memory limits.
+
+## 9. Alert Rules via Kibana API
+- **Decision:** Create alert rules via the Kibana alerting API instead of NDJSON import.
+- **Why:** Encrypted saved objects and rule-type registration vary by version; API creation is more reliable.
+- **Trade-off:** Requires API calls after Kibana is ready.

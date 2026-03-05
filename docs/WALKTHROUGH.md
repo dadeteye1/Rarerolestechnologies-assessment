@@ -1,6 +1,6 @@
 # Walkthrough
 
-This walkthrough is written for a manager-level reader who wants to understand *what* to do and *what to expect* at each step. It is organized by phases with clear outcomes and validation points. You can follow it end-to-end on macOS using `kind`, or use it as a checklist during the demo.
+This walkthrough is written for a manager-level reader who wants to understand *what* to do and *what to expect* at each step. It is organized by phases with clear outcomes and validation points. You can follow it end-to-end on any OS with Docker and `kind`, or use it as a checklist during the demo.
 
 ## Phase 0 — Prerequisites (5 minutes)
 **Outcome:** You have a ready local environment to run the demo.
@@ -11,7 +11,7 @@ This walkthrough is written for a manager-level reader who wants to understand *
 ## Phase 1 — Cluster + Ingress (10–15 minutes)
 **Outcome:** Kubernetes cluster is running, ingress is ready.
 
-1. Create a 3-node kind cluster (or use the automated script).
+1. Create a 1-node kind cluster for fast local iteration (or use the automated script). Use `FAST_MODE=0` for 3 nodes.
 2. Install NGINX Ingress for routing.
 3. Validate:
    - All nodes are `Ready`.
@@ -81,7 +81,8 @@ This walkthrough is written for a manager-level reader who wants to understand *
 **Outcome:** Management dashboards and alerts are visible in Kibana.
 
 1. In Kibana, import the NDJSON files from `rum/dashboards/`.
-2. Import alerting rules from `infrastructure/alerting-rules/`.
+2. Create alerting rules via the Kibana alerting API using the definitions in `infrastructure/alerting-rules/alerts.ndjson`.
+   - Use a superuser account and the `.index-threshold` rule type.
 3. Use `rum/dashboards/panel-specs.md` to build the required panels and re-export if needed.
 
 ## Phase 9 — Local Access (2 minutes)

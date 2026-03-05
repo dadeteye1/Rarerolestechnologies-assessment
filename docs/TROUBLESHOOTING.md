@@ -32,6 +32,21 @@
 ## APM Server shows blank page in browser
 **Expected:** APM Server is an API endpoint, not a UI. Use Kibana APM app for the UI.
 
+## Kibana crashes with OOM in fast mode
+**Cause:** Kibana node heap exceeded with small memory limits.
+
+**Fix**
+1. Ensure `elastic-stack/02-kibana.yaml` includes `NODE_OPTIONS=--max-old-space-size=512`.
+2. Keep Kibana memory limit at or above `768Mi` in fast mode.
+3. Restart the Kibana deployment.
+
+## Alerting API returns “not registered” or “encryptedSavedObjects” errors
+**Cause:** Kibana encryption keys are not set.
+
+**Fix**
+1. Set `XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY`, `XPACK_SECURITY_ENCRYPTIONKEY`, and `XPACK_REPORTING_ENCRYPTIONKEY` in `elastic-stack/02-kibana.yaml`.
+2. Restart Kibana.
+
 ## Electron dashboard doesn’t open or is blank
 **Cause:** Dependencies not installed or the app is not started from the correct directory.
 

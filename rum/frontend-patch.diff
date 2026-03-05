@@ -1,7 +1,7 @@
-diff --git a/src/frontend/templates/header.html b/tmphy9mhild
+diff --git a/src/frontend/templates/header.html b/src/frontend/templates/header.html
 index 21777c48..a782b1a3 100644
 --- a/src/frontend/templates/header.html
-+++ b/tmphy9mhild
++++ b/src/frontend/templates/header.html
 @@ -29,6 +29,20 @@
          Online Boutique
          {{ end }}

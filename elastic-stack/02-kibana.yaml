@@ -39,12 +39,20 @@ spec:
                 secretKeyRef:
                   name: elastic-credentials
                   key: kibana_password
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=512"
+            - name: XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY
+              value: "sre-assessment-encrypted-objects-key-123456"
+            - name: XPACK_SECURITY_ENCRYPTIONKEY
+              value: "sre-assessment-security-key-123456789012"
+            - name: XPACK_REPORTING_ENCRYPTIONKEY
+              value: "sre-assessment-reporting-key-123456789012"
           ports:
             - containerPort: 5601
           resources:
             requests:
-              cpu: "200m"
-              memory: "512Mi"
+              cpu: "150m"
+              memory: "384Mi"
             limits:
-              cpu: "1"
-              memory: "1Gi"
+              cpu: "750m"
+              memory: "768Mi"

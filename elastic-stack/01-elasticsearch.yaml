@@ -32,7 +32,7 @@ spec:
           image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
           env:
             - name: ES_JAVA_OPTS
-              value: "-Xms1g -Xmx1g"
+              value: "-Xms512m -Xmx512m"
             - name: discovery.type
               value: "single-node"
             - name: xpack.security.enabled
@@ -53,11 +53,11 @@ spec:
               mountPath: /usr/share/elasticsearch/data
           resources:
             requests:
-              cpu: "500m"
-              memory: "2Gi"
+              cpu: "250m"
+              memory: "512Mi"
             limits:
-              cpu: "2"
-              memory: "4Gi"
+              cpu: "1"
+              memory: "1Gi"
   volumeClaimTemplates:
     - metadata:
         name: es-data

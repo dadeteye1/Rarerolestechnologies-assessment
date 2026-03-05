@@ -4,10 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 KIND_CLUSTER_NAME="sre"
-ELASTIC_PASSWORD="${ELASTIC_PASSWORD:-lamilinux@}"
+FAST_MODE="${FAST_MODE:-1}"
+ELASTIC_PASSWORD="${ELASTIC_PASSWORD:-administrator1}"
 APM_SECRET_TOKEN="${APM_SECRET_TOKEN:-changeme-apm-secret-token}"
-ROOT_USERNAME="${ROOT_USERNAME:-root}"
-ROOT_PASSWORD="${ROOT_PASSWORD:-lamilinux@}"
+ROOT_USERNAME="${ROOT_USERNAME:-admin}"
+ROOT_PASSWORD="${ROOT_PASSWORD:-administrator1}"
 
 run_with_timeout() {
   local timeout_seconds="$1"
@@ -31,7 +32,11 @@ run_with_timeout() {
   wait "${cmd_pid}"
 }
 
-echo "[1/9] Creating 3-node kind cluster (if needed)..."
+if [[ "${FAST_MODE}" == "1" ]]; then
+  echo "[1/9] Creating 1-node kind cluster (fast mode, if needed)..."
+else
+  echo "[1/9] Creating 3-node kind cluster (if needed)..."
+fi
 if kubectl config get-contexts -o name 2>/dev/null | grep -qx "kind-${KIND_CLUSTER_NAME}"; then
   echo "  - kind context 'kind-${KIND_CLUSTER_NAME}' exists, checking API health"
   kubectl config use-context "kind-${KIND_CLUSTER_NAME}"
@@ -40,6 +45,46 @@ if kubectl config get-contexts -o name 2>/dev/null | grep -qx "kind-${KIND_CLUST
   else
     echo "  - existing context is not reachable, recreating kind cluster '${KIND_CLUSTER_NAME}'"
     run_with_timeout 180 kind delete cluster --name "${KIND_CLUSTER_NAME}" >/dev/null 2>&1 || true
+    if [[ "${FAST_MODE}" == "1" ]]; then
+      cat > /tmp/kind-sre-1node.yaml <<'YAML'
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+YAML
+      if ! run_with_timeout 420 kind create cluster --name "${KIND_CLUSTER_NAME}" --config /tmp/kind-sre-1node.yaml; then
+        echo "ERROR: timed out creating kind cluster. Ensure Docker Desktop is running and has enough resources."
+        exit 1
+      fi
+    else
+      cat > /tmp/kind-sre-3node.yaml <<'YAML'
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker
+YAML
+      if ! run_with_timeout 420 kind create cluster --name "${KIND_CLUSTER_NAME}" --config /tmp/kind-sre-3node.yaml; then
+        echo "ERROR: timed out creating kind cluster. Ensure Docker Desktop is running and has enough resources."
+        exit 1
+      fi
+    fi
+    kubectl config use-context "kind-${KIND_CLUSTER_NAME}"
+  fi
+else
+  if [[ "${FAST_MODE}" == "1" ]]; then
+    cat > /tmp/kind-sre-1node.yaml <<'YAML'
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+YAML
+    if ! run_with_timeout 420 kind create cluster --name "${KIND_CLUSTER_NAME}" --config /tmp/kind-sre-1node.yaml; then
+      echo "ERROR: timed out creating kind cluster. Ensure Docker Desktop is running and has enough resources."
+      exit 1
+    fi
+  else
     cat > /tmp/kind-sre-3node.yaml <<'YAML'
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -52,20 +97,6 @@ YAML
       echo "ERROR: timed out creating kind cluster. Ensure Docker Desktop is running and has enough resources."
       exit 1
     fi
-    kubectl config use-context "kind-${KIND_CLUSTER_NAME}"
-  fi
-else
-  cat > /tmp/kind-sre-3node.yaml <<'YAML'
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-  - role: control-plane
-  - role: worker
-  - role: worker
-YAML
-  if ! run_with_timeout 420 kind create cluster --name "${KIND_CLUSTER_NAME}" --config /tmp/kind-sre-3node.yaml; then
-    echo "ERROR: timed out creating kind cluster. Ensure Docker Desktop is running and has enough resources."
-    exit 1
   fi
   kubectl config use-context "kind-${KIND_CLUSTER_NAME}"
 fi

@@ -34,7 +34,7 @@ sre-assessment/
 ```
 
 ## Prerequisites
-- macOS with Docker Desktop running and enough resources (suggested: 6+ CPU / 8+ GB RAM).
+- Docker Desktop or Docker Engine with enough resources (suggested: 6+ CPU / 8+ GB RAM).
 - `kubectl`, `helm`, `kind` installed.
 - `git` for applying patches to the Online Boutique repo.
 
@@ -43,10 +43,12 @@ This uses `run_all.sh` to set up the cluster, deploy the stack, and print the re
 
 1. From this repo root, run:
    - `sh run_all.sh`
+   - `FAST_MODE=0 sh run_all.sh` if you want a 3-node cluster instead of the default 1-node fast mode.
 2. Follow the **manual** steps printed at the end:
    - Apply instrumentation patches.
    - Apply RUM patch (after setting APM server URL).
-   - Import Kibana dashboards + alerting rules.
+   - Import Kibana dashboards.
+   - Create alerting rules (see Phase 8 below).
 3. Expose Kibana and APM locally using port-forwarding (keep terminals open):
    - `kubectl -n elastic-stack port-forward svc/kibana 5601:5601 --address 127.0.0.1`
    - `kubectl -n elastic-stack port-forward svc/apm-server 8200:8200 --address 127.0.0.1`
@@ -64,7 +66,7 @@ This section mirrors `docs/WALKTHROUGH.md` but is included here for quick review
 
 ### Phase 1 — Cluster + Ingress (10–15 minutes)
 **Outcome:** Kubernetes cluster is running, ingress is ready.
-- Create a 3-node kind cluster (or use the automated script).
+- Create a 1-node kind cluster (fast mode default) or 3-node (set `FAST_MODE=0`).
 - Install NGINX Ingress for routing.
 - Validate nodes and ingress controller are `Ready`.
 
@@ -81,6 +83,8 @@ This section mirrors `docs/WALKTHROUGH.md` but is included here for quick review
 - Wait for Elasticsearch HTTP to respond.
 - Set `kibana_system` password to match `ELASTIC_PASSWORD`.
 - Restart Kibana.
+Notes:
+- Kibana encryption keys are configured via environment variables in `elastic-stack/02-kibana.yaml` to enable alerting APIs.
 
 ### Phase 4 — OpenTelemetry Collector (5–10 minutes)
 **Outcome:** Telemetry flows from services to Elastic.
@@ -103,7 +107,8 @@ This section mirrors `docs/WALKTHROUGH.md` but is included here for quick review
 ### Phase 8 — Dashboards and Alerts (10–15 minutes)
 **Outcome:** Management dashboards and alerts are visible in Kibana.
 - Import NDJSON dashboards from `rum/dashboards/`.
-- Import alert rules from `infrastructure/alerting-rules/`.
+- Create alert rules via the Kibana alerting API using the definitions in `infrastructure/alerting-rules/alerts.ndjson`.
+  - Use a superuser account and the `.index-threshold` rule type.
 
 ### Phase 9 — Local Access (2 minutes)
 **Outcome:** Kibana is reachable on your laptop for dashboard review.
