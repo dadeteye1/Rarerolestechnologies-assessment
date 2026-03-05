@@ -1,22 +1,25 @@
-diff --git a/src/frontend/templates/index.html b/src/frontend/templates/index.html
-index 8b9f3a1..b29d2c3 100644
---- a/src/frontend/templates/index.html
-+++ b/src/frontend/templates/index.html
-@@ -4,6 +4,20 @@
- <head>
-   <meta charset="UTF-8">
-   <title>Online Boutique</title>
+diff --git a/src/frontend/templates/header.html b/tmphy9mhild
+index 21777c48..a782b1a3 100644
+--- a/src/frontend/templates/header.html
++++ b/tmphy9mhild
+@@ -29,6 +29,20 @@
+         Online Boutique
+         {{ end }}
+     </title>
 +
-+  <!-- Elastic RUM Agent -->
-+  <script src="https://unpkg.com/@elastic/apm-rum@5.16.0/dist/bundles/elastic-apm-rum.umd.min.js"></script>
-+  <script>
-+    elasticApm.init({
-+      serviceName: 'frontend',
-+      serverUrl: 'APM_SERVER_URL',
-+      environment: 'assessment',
-+      distributedTracingOrigins: ['*'],
-+      breakdownMetrics: true,
-+      instrument: true,
-+    })
-+  </script>
- </head>
++<!-- Elastic RUM Agent -->
++<script src="https://unpkg.com/@elastic/apm-rum@5.16.0/dist/bundles/elastic-apm-rum.umd.min.js"></script>
++<script>
++  elasticApm.init({
++    serviceName: 'frontend',
++    serverUrl: 'http://127.0.0.1:8200',
++    environment: 'assessment',
++    distributedTracingOrigins: ['*'],
++    breakdownMetrics: true,
++    instrument: true,
++  })
++</script>
++
+     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB"
+         crossorigin="anonymous">
+     <link rel="preconnect" href="https://fonts.googleapis.com">

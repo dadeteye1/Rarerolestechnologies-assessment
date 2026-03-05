@@ -1,11 +1,56 @@
+diff --git a/src/cartservice/src/Startup.cs b/src/cartservice/src/Startup.cs
+index 136d3036..546b0f3b 100644
+--- a/src/cartservice/src/Startup.cs
++++ b/src/cartservice/src/Startup.cs
+@@ -10,6 +10,10 @@ using Microsoft.Extensions.Hosting;
+ using cartservice.cartstore;
+ using cartservice.services;
+ using Microsoft.Extensions.Caching.StackExchangeRedis;
++using OpenTelemetry.Metrics;
++using OpenTelemetry.Resources;
++using OpenTelemetry.Trace;
++using System.Collections.Generic;
+ 
+ namespace cartservice
+ {
+@@ -55,6 +59,29 @@ namespace cartservice
+                 services.AddSingleton<ICartStore, RedisCartStore>();
+             }
+ 
++            services.AddOpenTelemetry()
++                .ConfigureResource(resource => resource
++                    .AddService(serviceName: "cartservice", serviceVersion: "1.0.0")
++                    .AddAttributes(new[]
++                    {
++                        new KeyValuePair<string, object>("deployment.environment", "assessment")
++                    }))
++                .WithTracing(tracing => tracing
++                    .AddAspNetCoreInstrumentation()
++                    .AddGrpcClientInstrumentation()
++                    .AddHttpClientInstrumentation()
++                    .AddOtlpExporter(options =>
++                    {
++                        options.Endpoint = new Uri(Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://otel-agent:4317");
++                    }))
++                .WithMetrics(metrics => metrics
++                    .AddAspNetCoreInstrumentation()
++                    .AddRuntimeInstrumentation()
++                    .AddProcessInstrumentation()
++                    .AddOtlpExporter(options =>
++                    {
++                        options.Endpoint = new Uri(Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://otel-agent:4317");
++                    }));
+ 
+             services.AddGrpc();
+         }
 diff --git a/src/cartservice/src/cartservice.csproj b/src/cartservice/src/cartservice.csproj
-index 9d2a3aa..c5b80d1 100644
+index 87c36b0f..6693254f 100644
 --- a/src/cartservice/src/cartservice.csproj
 +++ b/src/cartservice/src/cartservice.csproj
-@@ -10,6 +10,12 @@
-   <ItemGroup>
-     <PackageReference Include="Grpc.AspNetCore" Version="2.59.0" />
-     <PackageReference Include="StackExchange.Redis" Version="2.6.86" />
+@@ -11,6 +11,12 @@
+     <PackageReference Include="Google.Cloud.Spanner.Data" Version="5.12.0" />
+     <PackageReference Include="Npgsql" Version="10.0.1" />
+     <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.7.0" />
 +    <PackageReference Include="OpenTelemetry" Version="1.9.0" />
 +    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
 +    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
@@ -13,97 +58,5 @@ index 9d2a3aa..c5b80d1 100644
 +    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0" />
 +    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
    </ItemGroup>
- </Project>
-
-diff --git a/src/cartservice/src/Program.cs b/src/cartservice/src/Program.cs
-index 3d18d8f..c6cc7df 100644
---- a/src/cartservice/src/Program.cs
-+++ b/src/cartservice/src/Program.cs
-@@ -1,5 +1,10 @@
- using System;
-+using OpenTelemetry.Metrics;
-+using OpenTelemetry.Resources;
-+using OpenTelemetry.Trace;
- using Microsoft.AspNetCore.Builder;
- using Microsoft.Extensions.DependencyInjection;
- using Microsoft.Extensions.Hosting;
-@@ -10,6 +15,29 @@ var builder = WebApplication.CreateBuilder(args);
  
- builder.Services.AddGrpc();
- builder.Services.AddSingleton<CartStore>();
-+
-+builder.Services.AddOpenTelemetry()
-+    .ConfigureResource(resource => resource
-+        .AddService(serviceName: "cartservice", serviceVersion: "1.0.0")
-+        .AddAttributes(new[]
-+        {
-+            new KeyValuePair<string, object>("deployment.environment", "assessment")
-+        }))
-+    .WithTracing(tracing => tracing
-+        .AddAspNetCoreInstrumentation()
-+        .AddGrpcClientInstrumentation()
-+        .AddHttpClientInstrumentation()
-+        .AddSource("cartservice")
-+        .AddOtlpExporter(options =>
-+        {
-+            options.Endpoint = new Uri(Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://otel-agent:4318");
-+        }))
-+    .WithMetrics(metrics => metrics
-+        .AddAspNetCoreInstrumentation()
-+        .AddRuntimeInstrumentation()
-+        .AddProcessInstrumentation()
-+        .AddMeter("cartservice")
-+        .AddOtlpExporter(options =>
-+        {
-+            options.Endpoint = new Uri(Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://otel-agent:4318");
-+        }));
- 
- var app = builder.Build();
- app.MapGrpcService<CartService>();
- app.MapGet("/", () => "CartService is running");
- app.Run();
-
-diff --git a/src/cartservice/src/Telemetry.cs b/src/cartservice/src/Telemetry.cs
-new file mode 100644
-index 0000000..6dcf8c1
---- /dev/null
-+++ b/src/cartservice/src/Telemetry.cs
-@@ -0,0 +1,12 @@
-+using System.Diagnostics;
-+using System.Diagnostics.Metrics;
-+
-+internal static class Telemetry
-+{
-+    public static readonly ActivitySource ActivitySource = new("cartservice");
-+    public static readonly Meter Meter = new("cartservice");
-+    public static readonly Counter<long> CartOperations =
-+        Meter.CreateCounter<long>("cart.operations");
-+}
-
-diff --git a/src/cartservice/src/CartStore.cs b/src/cartservice/src/CartStore.cs
-index 4b2df1f..a289ef5 100644
---- a/src/cartservice/src/CartStore.cs
-+++ b/src/cartservice/src/CartStore.cs
-@@ -37,6 +37,12 @@ public class CartStore
-     public async Task AddItemAsync(string userId, string productId, int quantity)
-     {
-+        using var activity = Telemetry.ActivitySource.StartActivity("cart.add_item");
-+        activity?.SetTag("user.id", userId);
-+        activity?.SetTag("product.id", productId);
-+        activity?.SetTag("product.count", quantity);
-+        Telemetry.CartOperations.Add(1, new KeyValuePair<string, object>("operation", "add"));
-+
-         var cart = await GetCartAsync(userId);
-         cart.Items.Add(new CartItem { ProductId = productId, Quantity = quantity });
-         await SaveCartAsync(userId, cart);
-     }
-@@ -44,6 +50,11 @@ public class CartStore
-     public async Task EmptyCartAsync(string userId)
-     {
-+        using var activity = Telemetry.ActivitySource.StartActivity("cart.empty");
-+        activity?.SetTag("user.id", userId);
-+        Telemetry.CartOperations.Add(1, new KeyValuePair<string, object>("operation", "empty"));
-+
-         await _redis.KeyDeleteAsync(GetCartKey(userId));
-     }
- }
+   <ItemGroup>
