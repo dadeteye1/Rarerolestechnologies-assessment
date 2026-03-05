@@ -56,6 +56,9 @@ This uses `run_all.sh` to set up the cluster, deploy the stack, and print the re
 Kibana UI: `http://127.0.0.1:5601`
 APM Server: `http://127.0.0.1:8200` (API endpoint, not a UI)
 
+Credentials:
+- Set `ELASTIC_PASSWORD`, `ROOT_USERNAME`, and `ROOT_PASSWORD` in your shell if you want to override defaults.
+
 ## Manager-Friendly Walkthrough
 This section mirrors `docs/WALKTHROUGH.md` but is included here for quick review.
 
